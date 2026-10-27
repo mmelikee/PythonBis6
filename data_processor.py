@@ -102,6 +102,10 @@ class LogProcessor(DataProcessor):
 
         if isinstance(data, list):
             for item in data:
-                self._store(str(item))
+                level = item.get("log_level", "").strip()
+                message = item.get("log_message", "").strip()
+                self._store(f"{level}: {message}")
         else:
-            self._store(str(data))
+            level = data.get("log_level", "").strip()
+            message = data.get("log_message", "").strip()
+            self._store(f"{level}: {message}")
