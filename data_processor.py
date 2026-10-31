@@ -44,7 +44,7 @@ class NumericProcessor(DataProcessor):
 
         return False
 
-    def ingest(self, data: Any) -> None:
+    def ingest(self, data: int | float | list[int | float]) -> None:
         if not self.validate(data):
             raise ValueError("Invalid numeric data")
 
@@ -65,7 +65,7 @@ class TextProcessor(DataProcessor):
 
         return False
 
-    def ingest(self, data: Any) -> None:
+    def ingest(self, data: str | list[str]) -> None:
         if not self.validate(data):
             raise ValueError("Invalid text data")
 
@@ -96,7 +96,7 @@ class LogProcessor(DataProcessor):
 
         return False
 
-    def ingest(self, data: Any) -> None:
+    def ingest(self, data: dict[str, str] | list[dict[str, str]]) -> None:
         if not self.validate(data):
             raise ValueError("Invalid log data")
 
@@ -109,3 +109,84 @@ class LogProcessor(DataProcessor):
             level = data.get("log_level", "").strip()
             message = data.get("log_message", "").strip()
             self._store(f"{level}: {message}")
+
+
+def main() -> None:
+    print("=== Code Nexus - Data Processor ===")
+
+    # Create processors
+    numeric = NumericProcessor()
+    text = TextProcessor()
+    log = LogProcessor()
+
+    # Test NumericProcessor
+    print("\nTesting Numeric Processor...")
+
+    print("Valid 42:", numeric.validate(42))
+    print("Invalid Hello:", numeric.validate("Hello"))
+
+    print("Testing invalid ingestion:")
+    try:
+        numeric.ingest("foo")  # type: ignore[arg-type]
+    except ValueError as error:
+        print("Got exception:", error)
+
+    numeric.ingest([1, 2, 3, 4, 5])
+
+    print("Extracting numeric values:")
+    for _ in range(3):
+        rank, value = numeric.output()
+        print(f"Numeric value {rank}: {value}")
+
+    # Test TextProcessor
+    print("\nTesting Text Processor...")
+
+    print("Valid Hello:", text.validate("Hello"))
+    print("Invalid 42:", text.validate(42))
+
+    if text.validate(["Hello", "Nexus", "World"]):
+        text.ingest(["Hello", "Nexus", "World"])
+
+    print("Extracting text values:")
+    rank, value = text.output()
+    print(f"Text value {rank}: {value}")
+
+    # Test LogProcessor
+    print("\nTesting Log Processor...")
+
+    valid_log = {
+        "log_level": "NOTICE",
+        "log_message": "Connection to server"
+    }
+
+    invalid_log = {
+        "log_level": "ERROR",
+        "log_message": 123
+    }
+
+    print("Valid log:", log.validate(valid_log))
+    print("Invalid log:", log.validate(invalid_log))
+
+    if log.validate([
+        valid_log,
+        {
+            "log_level": "ERROR",
+            "log_message": "Unauthorized access"
+        }
+    ]):
+        log.ingest([
+            valid_log,
+            {
+                "log_level": "ERROR",
+                "log_message": "Unauthorized access"
+            }
+        ])
+
+    print("Extracting log values:")
+    for _ in range(2):
+        rank, value = log.output()
+        print(f"Log entry {rank}: {value}")
+
+
+if __name__ == "__main__":
+    main()
